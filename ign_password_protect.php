@@ -1485,7 +1485,7 @@ if (txpinterface == 'public')
 		 ), $atts, 0)
 	 );
 
-	 return fInput('text','p_userid', $value, $class, $title, $onClick, $size, $tab, $id );
+	 return fInput('text',$name, $value, $class, $title, $onClick, $size, $tab, $id );
  }
 
 // -------------------------------------------------------------
