@@ -7,7 +7,7 @@
 // Plugin name is optional.  If unset, it will be extracted from the current
 // file name. Uncomment and edit this line to override:
 $plugin['name'] = 'ign_password_protect';
-$plugin['version'] = '0.5b8';
+$plugin['version'] = '0.5b9';
 $plugin['author'] = 'Jeremy Amos';
 $plugin['author_uri'] = 'http://www.igneramos.com';
 $plugin['description'] = 'Password protect articles or sections; authenticates against txp_users or alternate database (ign_users) ';
@@ -946,12 +946,13 @@ if (txpinterface == 'public')
 
 	 list($form_action) = explode('?', $_SERVER['REQUEST_URI']);
 
-			$id = (!empty($id)) ? " id=\"$id\"" : NULL;
+	 			// $id = (!empty($id)) ? " id=\"$id\"" : NULL;
+	$qs = @$_SERVER['QUERY_STRING'];
+	$qs = preg_replace('/&?logout=1/', '', $qs);
 
-	 $login =
-		 "<form action='{$form_action}' method='post'$id>".
-		 parse($use_form).
-		 "</form>";
+	 $login = (!empty($qs)) ? "<form action='{$form_action}?$qs' method='post'$id>" : "<form action='{$form_action}' method='post'$id>";
+	 $login .= parse($use_form);
+	 $login .= "</form>";
 
 	 return $login;
  }
@@ -2059,6 +2060,13 @@ If omitted, plugin simply checks for account existence (including privs = None).
 	<p>Examples coming soon!</p>
 
 	<p>Changelog:</p>
+
+	<p>	<ul>
+		<li><em>0.5b9</em> &#8211; 2008.4.6</li>
+	</ul>
+	<ul>
+		<li>addressed issue with log <strong>in</strong> links with messy urls</li>
+	</ul></li></p>
 
 	<p>	<ul>
 		<li><em>0.5b8</em> &#8211; 2008.4.5</li>
