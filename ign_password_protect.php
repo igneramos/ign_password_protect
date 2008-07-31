@@ -7,7 +7,7 @@
 // Plugin name is optional.  If unset, it will be extracted from the current
 // file name. Uncomment and edit this line to override:
 $plugin['name'] = 'ign_password_protect';
-$plugin['version'] = '0.5b7';
+$plugin['version'] = '0.5b8';
 $plugin['author'] = 'Jeremy Amos';
 $plugin['author_uri'] = 'http://www.igneramos.com';
 $plugin['description'] = 'Password protect articles or sections; authenticates against txp_users or alternate database (ign_users) ';
@@ -21,6 +21,7 @@ $plugin['type'] = '1';
 @include_once('zem_tpl.php');
 
 # --- BEGIN PLUGIN CODE ---
+
 /*------------------------------------
 Portions of this code Copyright 2004 by Dean Allen. All rights reserved.
 Use of this software denotes acceptance of the Textpattern license agreement
@@ -88,7 +89,7 @@ if (empty($_SERVER['REQUEST_URI'])) {
  {
 
 	 $lang = array(
-		 'manage_users' => 'Manage Clients',
+		 'manage_users' => 'Manage Users',
 		 'user_db' => 'Use Alternate Database?',
 		 'users' => 'Users',
 		 'add_new_user' => 'Add New User',
@@ -1614,7 +1615,9 @@ if (txpinterface == 'public')
 
 	 $text = (!empty($thing)) ? $thing : ((!empty($linktext)) ? $linktext : IGN_LOGOUT_LINK);
 
-	 $o[] = "<a href='{$return_path}?logout=1'";
+	$q = (!empty($_SERVER['QUERY_STRING'])) ? $_SERVER['QUERY_STRING']."&logout=1" : 'logout=1';
+
+	 $o[] = "<a href='{$return_path}?$q'";
 	 $o[] = (!empty($class)) ? "class='$class'" : '';
 	 $o[] = (!empty($alt)) ? "alt='$alt'" : '';
 	 $o[] = (!empty($title)) ? "title='$title'" : '';
@@ -2055,8 +2058,16 @@ If omitted, plugin simply checks for account existence (including privs = None).
 
 	<p>Examples coming soon!</p>
 
-	<p>Changelog:
+	<p>Changelog:</p>
+
+	<p>	<ul>
+		<li><em>0.5b8</em> &#8211; 2008.4.5</li>
+	</ul>
 	<ul>
+		<li>addressed issue with logout links with messy urls</li>
+	</ul></li></p>
+
+	<p>	<ul>
 		<li><em>0.5b7</em> &#8211; 2008.3.18</li>
 	</ul>
 	<ul>
