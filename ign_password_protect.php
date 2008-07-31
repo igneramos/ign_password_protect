@@ -1539,11 +1539,12 @@ if (txpinterface == 'public')
 			 'name' => 'remember',
 			 'value' => '1',
 			 'checked' => '',
-			 'tab' => ''
+			 'tab' => '',
+			 'id' => '',
 		 ), $atts, 0)
 	 );
 
-	 return checkbox($name, $value, $checked, $tab);
+	 return checkbox($name, $value, $checked, $tab, $id);
  }
 
 // -------------------------------------------------------------
