@@ -1476,14 +1476,14 @@ if (txpinterface == 'public')
 			 'value' => '',
 			 'class' => '',
 			 'title' => '',
-			 'onclick' => '',
+			 'onClick' => '',
 			 'size' => '',
 			 'tab' => '',
 			 'id' => ''
 		 ), $atts, 0)
 	 );
 
-	 return fInput('text','p_userid', $value, $class);
+	 return fInput('text','p_userid', $value, $class, $title, $onClick, $size, $tab, $id );
  }
 
 // -------------------------------------------------------------
