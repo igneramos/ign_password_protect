@@ -64,10 +64,6 @@ Use of this plugin denotes acceptance of the Textpattern license agreement
 	 'privs' => 4
  );
 
-// Default message text
-define('IGN_LOGIN_ERR','Sorry, the username and/or password entered is not valid, or you do not have privileges to access this resource.');
-define('IGN_LOGOUT_LINK', 'Click here to logout.');
-
 /* this is needed for installations where REQUEST_URI is not avaliable - thanks to Dave Harper www.hikebox.com*/
 if (empty($_SERVER['REQUEST_URI'])) {
 			 if (!empty($_SERVER['SCRIPT_NAME'])) {
@@ -89,28 +85,30 @@ global $ign_pwd_prot_strings;
 if (!is_array($ign_pwd_prot_strings))
 	{
 	$ign_pwd_prot_strings = array(
-		 'a_message_will_be_sent_with_login' => 'A message will be sent with login information',
-		 'add_new_user' => 'Add New User',
-		 'confirm_pass' => 'Re-enter new password to confirm',
-		 'could_not_update_user' => 'Could not update user',
-		 'email_pass' => 'Mail it to me',
-		 'error_adding_new_user' => 'Could not add new user',
-		 'fallback' => 'Also authenticate against txp_users?',
-		 'manage_users' => 'Manage Users',
-		 'new_pass' => 'Enter new password',
-		 'reset_user_password' => 'Reset User Password',
-		 'user_db' => 'Use Alternate Database?',
-		 'users' => 'Users',
-		 //for email confirmations, values available are:
-		 //1 - real name
-		 //2 - user name
-		 //3 - password
-		 //4 - site name
-		 //5 - site url
-		 // see http://www.php.net/sprintf for more information on how to format the string
-		 'new_user_email' => "Dear %1\$s,\r\n\r\nYou have been registered as a user of %4\$s.\r\nYour username is: %2\$s\r\nYour password is: %3\$s\r\n\r\nVisit the site at %5\$s",
-		 'change_email' => "Dear %1\$s,\r\n\r\nYour password has been changed. Your new password is: %3\$s\r\n\r\nVisit the site at %5\$s"
-		 );
+		'a_message_will_be_sent_with_login' => 'A message will be sent with login information',
+		'add_new_user' => 'Add New User',
+		'confirm_pass' => 'Re-enter new password to confirm',
+		'could_not_update_user' => 'Could not update user',
+		'email_pass' => 'Mail it to me',
+		'error_adding_new_user' => 'Could not add new user',
+		'fallback' => 'Also authenticate against txp_users?',
+		'ign_login_err' => 'Sorry, the username and/or password entered is not valid, or you do not have privileges to access this resource.',
+		'logout_linktext' => 'Click here to logout.',
+		'manage_users' => 'Manage Users',
+		'new_pass' => 'Enter new password',
+		'reset_user_password' => 'Reset User Password',
+		'user_db' => 'Use Alternate Database?',
+		'users' => 'Users',
+		//for email confirmations, values available are:
+		//1 - real name
+		//2 - user name
+		//3 - password
+		//4 - site name
+		//5 - site url
+		// see http://www.php.net/sprintf for more information on how to format the string
+		'new_user_email' => "Dear %1\$s,\r\n\r\nYou have been registered as a user of %4\$s.\r\nYour username is: %2\$s\r\nYour password is: %3\$s\r\n\r\nVisit the site at %5\$s",
+		'change_email' => "Dear %1\$s,\r\n\r\nYour password has been changed. Your new password is: %3\$s\r\n\r\nVisit the site at %5\$s"
+		);
 	}
 
 //--------------do not edit below this line------------------
@@ -1596,7 +1594,7 @@ if (txpinterface == 'public')
  {
 	 global $ign_err, $ign_error_codes;
 
-	 $text = (!empty($thing)) ? $thing : IGN_LOGIN_ERR;
+	 $text = (!empty($thing)) ? $thing : ign_gTxt('ign_login_err');
 
 	 extract(lAtts(
 		 array(
@@ -1657,7 +1655,7 @@ if (txpinterface == 'public')
 
 	 if(!empty($return_path)) list($return_path) = explode('?', $_SERVER['REQUEST_URI']);
 
-	 $text = (!empty($thing)) ? $thing : ((!empty($linktext)) ? $linktext : IGN_LOGOUT_LINK);
+	 $text = (!empty($thing)) ? $thing : (!empty($linktext) ? $linktext : ign_gTxt('logout_linktext'));
 
 	$q = (!empty($_SERVER['QUERY_STRING'])) ? $_SERVER['QUERY_STRING']."&logout=1" : 'logout=1';
 
@@ -2010,7 +2008,7 @@ If omitted, plugin simply checks for account existence (including privs = None).
 
 	<h4 style="color:#900;border-bottom:1px dotted #999;border-top:1px dotted #999;background-color:#ddd;"><code>&#60;txp:ign_error_msg&#62;&#60;/txp:ign_error_msg&#62;</code></h4>
 
-	<p>Used to specify error messages. Will return the value contained between the tags, or the IGN_LOGIN_ERROR constant if self-closing / empty.</p>
+	<p>Used to specify error messages. Will return the value contained between the tags, or the ign_login_err string if self-closing / empty.</p>
 
 	<p>Attributes:</p>
 
@@ -2060,7 +2058,7 @@ If omitted, plugin simply checks for account existence (including privs = None).
 
 	<h4 style="color:#900;border-bottom:1px dotted #999;border-top:1px dotted #999;background-color:#ddd;"><code>&#60;txp:ign_logout_link&#62;[_logout link_]&#60;/txp:ign_logout_link&#62;</code></h4>
 
-	<p>Used to create a logout link. Use either in self-closing format or as a container tag. If used as a container, text between the open and close tags will be used as the link. In self-closing form, you may supply a &#8220;linktext&#8221; attribute for the text, otherwise the value of IGN_LOGOUT_LINK constant will be used.</p>
+	<p>Used to create a logout link. Use either in self-closing format or as a container tag. If used as a container, text between the open and close tags will be used as the link. In self-closing form, you may supply a &#8220;linktext&#8221; attribute for the text, otherwise the value of the logout_linktext string will be used.</p>
 
 	<p>Examples:<br />
 <code>&#60;txp:ign_logout_link&#62;Logout Container-style&#60;/txp:ign_logout_link&#62;</code><br />
