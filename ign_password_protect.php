@@ -89,18 +89,18 @@ global $ign_pwd_prot_strings;
 if (!is_array($ign_pwd_prot_strings))
 	{
 	$ign_pwd_prot_strings = array(
+		 'a_message_will_be_sent_with_login' => 'A message will be sent with login information',
+		 'add_new_user' => 'Add New User',
+		 'confirm_pass' => 'Re-enter new password to confirm',
+		 'could_not_update_user' => 'Could not update user',
+		 'email_pass' => 'Mail it to me',
+		 'error_adding_new_user' => 'Could not add new user',
+		 'fallback' => 'Also authenticate against txp_users?',
 		 'manage_users' => 'Manage Users',
+		 'new_pass' => 'Enter new password',
+		 'reset_user_password' => 'Reset User Password',
 		 'user_db' => 'Use Alternate Database?',
 		 'users' => 'Users',
-		 'add_new_user' => 'Add New User',
-		 'could_not_update_user' => 'Could not update user',
-		 'reset_user_password' => 'Reset User Password',
-		 'error_adding_new_user' => 'Could not add new user',
-		 'new_pass' => 'Enter new password',
-		 'confirm_pass' => 'Re-enter new password to confirm',
-		 'a_message_will_be_sent_with_login' => 'A message will be sent with login information',
-		 'email_pass' => 'Mail it to me',
-		 'fallback' => 'Also authenticate against txp_users?',
 		 //for email confirmations, values available are:
 		 //1 - real name
 		 //2 - user name
@@ -112,6 +112,8 @@ if (!is_array($ign_pwd_prot_strings))
 		 'change_email' => "Dear %1\$s,\r\n\r\nYour password has been changed. Your new password is: %3\$s\r\n\r\nVisit the site at %5\$s"
 		 );
 	}
+
+//--------------do not edit below this line------------------
 
 define( 'IGN_PWD_PROT_PREFIX' , 'ign_pwd_prot' );
 
@@ -128,6 +130,7 @@ function ign_pwd_prot_enumerate_strings($event , $step='' , $pre=0)
 				);
 	return $r;
 }
+
 function ign_gTxt($what,$args = array())
 {
 	global $ign_pwd_prot_strings, $textarray;
@@ -155,8 +158,6 @@ function ign_gTxt($what,$args = array())
 
 	return $str;
 }
-
-//--------------do not edit below this line------------------
 
 //generate admin interface
 if (txpinterface == 'admin')
