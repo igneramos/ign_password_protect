@@ -85,10 +85,10 @@ if (empty($_SERVER['REQUEST_URI'])) {
  *
  *
  **/
- function ign_gTxt($what)
- {
-
-	 $lang = array(
+global $ign_pwd_prot_strings;
+if (!is_array($ign_pwd_prot_strings))
+	{
+	$ign_pwd_prot_strings = array(
 		 'manage_users' => 'Manage Users',
 		 'user_db' => 'Use Alternate Database?',
 		 'users' => 'Users',
@@ -110,10 +110,51 @@ if (empty($_SERVER['REQUEST_URI'])) {
 		 // see http://www.php.net/sprintf for more information on how to format the string
 		 'new_user_email' => "Dear %1\$s,\r\n\r\nYou have been registered as a user of %4\$s.\r\nYour username is: %2\$s\r\nYour password is: %3\$s\r\n\r\nVisit the site at %5\$s",
 		 'change_email' => "Dear %1\$s,\r\n\r\nYour password has been changed. Your new password is: %3\$s\r\n\r\nVisit the site at %5\$s"
-	 );
+		 );
+	}
 
-	 return $lang[$what];
- }
+define( 'IGN_PWD_PROT_PREFIX' , 'ign_pwd_prot' );
+
+register_callback( 'ign_pwd_prot_enumerate_strings' , 'l10n.enumerate_strings' );
+function ign_pwd_prot_enumerate_strings($event , $step='' , $pre=0)
+{
+	global $ign_pwd_prot_strings;
+	$r = array	(
+				'owner'		=> 'ign_password_protect',		#	Change to your plugin's name
+				'prefix'	=> IGN_PWD_PROT_PREFIX,			#	Its unique string prefix
+				'lang'		=> 'en-gb',						#	The language of the initial strings.
+				'event'		=> 'common',					#	public/admin/common = which interface the strings will be loaded into
+				'strings'	=> $ign_pwd_prot_strings,		#	The strings themselves.
+				);
+	return $r;
+}
+function ign_gTxt($what,$args = array())
+{
+	global $ign_pwd_prot_strings, $textarray;
+
+	$key = strtolower( IGN_PWD_PROT_PREFIX . '-' . $what );
+
+	if (isset($textarray[$key]))
+	{
+		$str = $textarray[$key];
+	}
+	else
+	{
+		$key = strtolower($what);
+
+		if (isset($ign_pwd_prot_strings[$key]))
+			$str = $ign_pwd_prot_strings[$key];
+		elseif (isset($textarray[$key]))
+			$str = $textarray[$key];
+		else
+			$str = $what;
+	}
+
+	if( !empty($args) )
+		$str = strtr( $str , $args );
+
+	return $str;
+}
 
 //--------------do not edit below this line------------------
 
