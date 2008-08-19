@@ -601,32 +601,33 @@ if (txpinterface == 'public')
  {
 	global $id, $file_error, $ign_user, $pretext, $s;
 
-	 // test for file_error
-	if(!$file_error) {
-		// get file permission, if present
-		$r = safe_field('permissions','txp_file','id');
-		if($r) { // if permissions field exists, test against it, otherwise return
-			if(!empty($ign_user) && ign_checkPrivs($r)) {
-				//continue on to download
-				return;
-			} else {
-				$s = '';
-				$pretext['s']='';
-				txp_die ( "Monkeys!", 403);
-			}
-		} else {
-			return; // no file permissions, so just carry on.
+	if(empty($id)) {
+		//no $id means we need to reparse the URL...
+		extract($pretext);
+		if($prefs['permlink_mode']=='messy') {
+			$id = gps('id'); //get $id from GET
+		} else { //we need to parse the uri
+			extract(chopurl($_SERVER['REQUEST_URI']));
+			$id = $u2; //should probably test for failure here...
 		}
-
-	} else {
-		$s = '';
-		$pretext['s']='';
-		txp_die(gTxt('404_not_found'), 404);
 	}
 
+	//let's check to see if this file has permissions set and get the category
+	$file = safe_row('permissions, category', 'txp_file', "id='$id'");
+	$parent = (!empty($file['category'])) ? safe_field('parent','txp_category', "name='{$file['category']}'") : '';
+	if(!empty($file['permissions'])) // permissions set, carry on
+	{ 
+		if(empty($ign_user) || !ign_checkPrivs($file['permissions'])) //if any check fails, give 'em the boot
+			$file_error = '403';
+	} else if($parent == 'clients'){ 	// let's fire off a quick category comparison for client-specific setups...
+		if(empty($ign_user) || $file['category'] !== $ign_user)
+			$file_error = '403';
+	}
+
+	//return to let file_download do its thing...
+	return;
 
  }
-
 // -------------------------------------------------------------
  function ign_update_access($acct)
  {
