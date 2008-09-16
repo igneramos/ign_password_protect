@@ -1,25 +1,10 @@
-//<?php
-// This is a PLUGIN TEMPLATE.
-
-// Copy this file to a new name like abc_myplugin.php. Edit the code, then
-// run this file at the command line to produce a plugin for distribution:
-// $ php abc_myplugin.php > abc_myplugin-0.1.txt
-
-
-// 0 = Plugin help is in Textile format, no raw HTML allowed (default).
-// 1 = Plugin help is in raw HTML. Not recommended.
-$plugin['allow_html_help'] = 1;
-
+<?php
 $plugin['name'] = 'ign_password_protect';
 $plugin['version'] = '0.5b10';
 $plugin['author'] = 'Jeremy Amos';
 $plugin['author_uri'] = 'http://www.igneramos.com';
 $plugin['description'] = 'Password protect articles or sections; authenticates against txp_users or alternate database (ign_users) ';
 
-// Plugin types:
-// 0 = regular plugin; loaded on the public web side only
-// 1 = admin plugin; loaded on both the public and admin side
-// 2 = library; loaded only when include_plugin() or require_plugin() is called
 $plugin['type'] = '1';
 
 if (!defined('txpinterface'))
@@ -69,17 +54,13 @@ Use of this plugin denotes acceptance of the Textpattern license agreement
 	 'privs' => 4
  );
 
-// Default message text
-define('IGN_LOGIN_ERR','Sorry, the username and/or password entered is not valid, or you do not have privileges to access this resource.');
-define('IGN_LOGOUT_LINK', 'Click here to logout.');
-
 /* this is needed for installations where REQUEST_URI is not avaliable - thanks to Dave Harper www.hikebox.com*/
 if (empty($_SERVER['REQUEST_URI'])) {
 			 if (!empty($_SERVER['SCRIPT_NAME'])) {
 				 $_SERVER['REQUEST_URI'] = $_SERVER['SCRIPT_NAME'];
 			 } else if (!empty($_SERVER['PHP_SELF'])) {
 				 $_SERVER['REQUEST_URI'] = $_SERVER['PHP_SELF'];
-} else if (!empty($_ENV['PATH_INFO'])) {
+ } else if (!empty($_ENV['PATH_INFO'])) {
 							 $_SERVER['REQUEST_URI'] = $_SERVER['PATH_INFO'];
 			 }
 }
@@ -90,37 +71,81 @@ if (empty($_SERVER['REQUEST_URI'])) {
  *
  *
  **/
- function ign_gTxt($what)
- {
-
-	 $lang = array(
-		 'manage_users' => 'Manage Users',
-		 'user_db' => 'Use Alternate Database?',
-		 'users' => 'Users',
-		 'add_new_user' => 'Add New User',
-		 'could_not_update_user' => 'Could not update user',
-		 'reset_user_password' => 'Reset User Password',
-		 'error_adding_new_user' => 'Could not add new user',
-		 'new_pass' => 'Enter new password',
-		 'confirm_pass' => 'Re-enter new password to confirm',
-		 'a_message_will_be_sent_with_login' => 'A message will be sent with login information',
-		 'email_pass' => 'Mail it to me',
-		 'fallback' => 'Also authenticate against txp_users?',
-		 //for email confirmations, values available are:
-		 //1 - real name
-		 //2 - user name
-		 //3 - password
-		 //4 - site name
-		 //5 - site url
-		 // see http://www.php.net/sprintf for more information on how to format the string
-		 'new_user_email' => "Dear %1\$s,\r\n\r\nYou have been registered as a user of %4\$s.\r\nYour username is: %2\$s\r\nYour password is: %3\$s\r\n\r\nVisit the site at %5\$s",
-		 'change_email' => "Dear %1\$s,\r\n\r\nYour password has been changed. Your new password is: %3\$s\r\n\r\nVisit the site at %5\$s"
-	 );
-
-	 return $lang[$what];
- }
+global $ign_pwd_prot_strings;
+if (!is_array($ign_pwd_prot_strings))
+	{
+	$ign_pwd_prot_strings = array(
+		'a_message_will_be_sent_with_login' => 'A message will be sent with login information',
+		'add_new_user' => 'Add New User',
+		'confirm_pass' => 'Re-enter new password to confirm',
+		'could_not_update_user' => 'Could not update user',
+		'email_pass' => 'Mail it to me',
+		'error_adding_new_user' => 'Could not add new user',
+		'fallback' => 'Also authenticate against txp_users?',
+		'ign_login_err' => 'Sorry, the username and/or password entered is not valid, or you do not have privileges to access this resource.',
+		'logout_linktext' => 'Click here to logout.',
+		'manage_users' => 'Manage Users',
+		'new_pass' => 'Enter new password',
+		'reset_user_password' => 'Reset User Password',
+		'user_db' => 'Use Alternate Database?',
+		'users' => 'Users',
+		//for email confirmations, values available are:
+		//1 - real name
+		//2 - user name
+		//3 - password
+		//4 - site name
+		//5 - site url
+		// see http://www.php.net/sprintf for more information on how to format the string
+		'new_user_email' => "Dear %1\$s,\r\n\r\nYou have been registered as a user of %4\$s.\r\nYour username is: %2\$s\r\nYour password is: %3\$s\r\n\r\nVisit the site at %5\$s",
+		'change_email' => "Dear %1\$s,\r\n\r\nYour password has been changed. Your new password is: %3\$s\r\n\r\nVisit the site at %5\$s"
+		);
+	}
 
 //--------------do not edit below this line------------------
+
+define( 'IGN_PWD_PROT_PREFIX' , 'ign_pwd_prot' );
+
+register_callback( 'ign_pwd_prot_enumerate_strings' , 'l10n.enumerate_strings' );
+function ign_pwd_prot_enumerate_strings($event , $step='' , $pre=0)
+{
+	global $ign_pwd_prot_strings;
+	$r = array	(
+				'owner'		=> 'ign_password_protect',		#	Change to your plugin's name
+				'prefix'	=> IGN_PWD_PROT_PREFIX,			#	Its unique string prefix
+				'lang'		=> 'en-gb',						#	The language of the initial strings.
+				'event'		=> 'common',					#	public/admin/common = which interface the strings will be loaded into
+				'strings'	=> $ign_pwd_prot_strings,		#	The strings themselves.
+				);
+	return $r;
+}
+
+function ign_gTxt($what,$args = array())
+{
+	global $ign_pwd_prot_strings, $textarray;
+
+	$key = strtolower( IGN_PWD_PROT_PREFIX . '-' . $what );
+
+	if (isset($textarray[$key]))
+	{
+		$str = $textarray[$key];
+	}
+	else
+	{
+		$key = strtolower($what);
+
+		if (isset($ign_pwd_prot_strings[$key]))
+			$str = $ign_pwd_prot_strings[$key];
+		elseif (isset($textarray[$key]))
+			$str = $textarray[$key];
+		else
+			$str = $what;
+	}
+
+	if( !empty($args) )
+		$str = strtr( $str , $args );
+
+	return $str;
+}
 
 //generate admin interface
 if (txpinterface == 'admin')
@@ -595,8 +620,8 @@ if (txpinterface == 'public')
 	{
 		if(empty($ign_user) || !ign_checkPrivs($file['permissions'])) //if any check fails, give 'em the boot
 			$file_error = '403';
-	} else if($parent == 'client'){ 	// let's fire off a quick category comparison for client-specific setups...
-		if(empty($ign_user) || $file['category'] != $ign_user)
+	} else if($parent == 'clients'){ 	// let's fire off a quick category comparison for client-specific setups...
+		if(empty($ign_user) || $file['category'] !== $ign_user)
 			$file_error = '403';
 	}
 
@@ -604,7 +629,6 @@ if (txpinterface == 'public')
 	return;
 
  }
-
 // -------------------------------------------------------------
  function ign_update_access($acct)
  {
@@ -948,7 +972,7 @@ if (txpinterface == 'public')
 	 $use_form = @fetch_form($form);
 	 if(empty($use_form) || $use_form == "<p>form <strong>$form</strong> does not exist</p>" )
 	 {
-	 		 $use_form = ign_default_form('login');
+		 $use_form = ign_default_form('login');
 	 }
 
 	 list($form_action) = explode('?', $_SERVER['REQUEST_URI']);
@@ -1561,7 +1585,7 @@ if (txpinterface == 'public')
  {
 	 global $ign_err, $ign_error_codes;
 
-	 $text = (!empty($thing)) ? $thing : IGN_LOGIN_ERR;
+	 $text = (!empty($thing)) ? $thing : ign_gTxt('ign_login_err');
 
 	 extract(lAtts(
 		 array(
@@ -1622,7 +1646,7 @@ if (txpinterface == 'public')
 
 	 if(!empty($return_path)) list($return_path) = explode('?', $_SERVER['REQUEST_URI']);
 
-	 $text = (!empty($thing)) ? $thing : ((!empty($linktext)) ? $linktext : IGN_LOGOUT_LINK);
+	 $text = (!empty($thing)) ? $thing : (!empty($linktext) ? $linktext : ign_gTxt('logout_linktext'));
 
 	$q = (!empty($_SERVER['QUERY_STRING'])) ? $_SERVER['QUERY_STRING']."&logout=1" : 'logout=1';
 
@@ -1692,7 +1716,6 @@ current;
 
 	 return $retVal;
  }
-
 
 //deprecated tags
 //-----------------------------------------------
@@ -1990,7 +2013,7 @@ Changelog:
 ==
 
 # --- END PLUGIN HELP ---
+-->
 <?php
 }
-
 ?>
