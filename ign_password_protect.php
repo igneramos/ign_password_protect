@@ -1,4 +1,4 @@
-//<?php
+<?php
 // This is a PLUGIN TEMPLATE.
 
 // Copy this file to a new name like abc_myplugin.php. Edit the code, then
@@ -401,7 +401,7 @@ if (txpinterface == 'public')
  **/
  function ign_doAuth($atts, $thing)
  {
-	 global $ign_user, $ign_err, $ign_page_privs;
+	 global $ign_user, $ign_err, $ign_page_privs, $ign_user_db;
 
 	 extract(lAtts(array(
 		 'hide_login' => 0,
@@ -459,23 +459,46 @@ if (txpinterface == 'public')
 		 $p_password = ps('p_password');
 	 }
 
+   $p_reset = ps('p_reset');
 	 $logout = gps('logout');
 	 $stay = ps('stay');
 	 $now = time()+3600*24*365;
 	 // $d = explode('.', $_SERVER['HTTP_HOST']);
 	 // $d = '.' . join('.', array_slice($d, 1-count($d), count($d)-1));
-	$domain = ign_getDomain();
+
+
+
+	 $domain = ign_getDomain();
 
 	 if ($logout) {
 		 setcookie('ign_login',' ',time()-3600,'/', $domain);
 		 $GLOBALS['ign_user'] = '';
 		 // logout from Vanilla
-			 if(load_plugin("ddh_vanilla_integration"))
+		 if(load_plugin("ddh_vanilla_integration"))
 		 {
 			 ddh_vanilla_logout();
-			 }
+		 }
 		 return 1;
 	 }
+
+   //test for public login if txp_user_db
+   if($ign_user_db == 'txp_users' && isset($_COOKIE['txp_login_publics'])) {
+    $name = substr(cs('txp_login_public'), 10);
+    $u = is_logged_in($name);
+    // hackish - if this is a valid user, we need to populate the cookie
+    if($u) {
+		  $acct = safe_row('name, privs, realname, nonce, last_access, email', $ign_user_db, "name='{$u['name']}'");
+
+      if(cs('ign_stay')) {
+		 	 if(!ign_setCookie($acct, $now)) return 3;
+	    } else {
+			 if(!ign_setCookie($acct)) return 3;
+      }
+      $GLOBALS['ign_user'] = $u['name'];
+			 ign_update_access($acct);
+     return 0;
+    }
+   }
 
 	 if (isset($_COOKIE['ign_login']) and !$logout) // cookie exists
 	 {
@@ -486,7 +509,8 @@ if (txpinterface == 'public')
 		 $acct = safe_row('name, privs, realname, nonce, last_access, email', $ign_user_db, "name='$c_userid'");
 		 $nonce = $acct['nonce'];
 
-		 if (md5($c_userid.$c_privs.$nonce) == $cookie_hash) {	 // check nonce
+     if ($nonce === md5($c_userid.pack('H*', $cookie_hash))) {
+//		 if (md5($c_userid.$c_privs.$nonce) == $cookie_hash) {	 // check nonce
 			 $GLOBALS['ign_user'] = $c_userid; // cookie is good, create $txp_user
 			 if($c_privs != $acct['privs']) //if privs have changed since cookie was created
 			 {
@@ -1725,6 +1749,7 @@ current;
 // TODO: Move tag output to TXP forms
 // TODO: Adjust length of time user is tracked as ONLINE
 // TODO: Url encode / decode cookie string
+// TODO: Add email forgotten password function?
 
 if (0) {
 ?>
