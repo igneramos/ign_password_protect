@@ -483,11 +483,7 @@ if (txpinterface == 'public')
 	 }
 
    //test for public login if txp_user_db
-<<<<<<< HEAD:ign_password_protect.php
    if($ign_user_db == 'txp_users' && isset($_COOKIE['txp_login_public'])) {
-=======
-   if($ign_user_db == 'txp_users' && isset($_COOKIE['txp_login_publics'])) {
->>>>>>> 84915b844f71c6968dc0ecb1f8f379d85a9766e4:ign_password_protect.php
     $name = substr(cs('txp_login_public'), 10);
     $u = is_logged_in($name);
     // hackish - if this is a valid user, we need to populate the cookie
@@ -557,7 +553,11 @@ if (txpinterface == 'public')
 				 $GLOBALS['ign_user'] = '';
 				 return 2;
 			 }
-
+   } elseif ($p_reset) {
+     // reset code?
+     sleep(3);
+   } elseif (gps('ign_reset')) {
+    // reset
 	 } else {
 		 $GLOBALS['ign_user'] = '';
 		 return -1;
@@ -648,7 +648,7 @@ if (txpinterface == 'public')
 		 $safe_user = strtr(addslashes($ign_user),array('_' => '\_', '%' => '\%'));
 		 safe_update($ign_user_db, "last_access = now()", "name = '$safe_user'");
 		 $ign_pp_updated = true;
-	 }
+	 } else { echo 'no can update'; }
  }
 
 // -------------------------------------------------------------
@@ -1178,7 +1178,7 @@ if (txpinterface == 'public')
 
 	 //build search here
 	 //TODO: Implement search on user name / real name
-
+   
 	 $rs = safe_rows_start("*", $ign_user_db, "$criteria order by $sort_by $dir limit $offset, $limit");
 
 	 $out[] = hed(ign_gTxt('users'),3,' align="center"');
@@ -1394,7 +1394,7 @@ if (txpinterface == 'public')
 
 	 $val = join(',', $o);
 
-	 $d = explode('.', $_SERVER['HTTP_HOST']);
+	// $d = explode('.', $_SERVER['HTTP_HOST']);
 	 // $domain = '.'.join('.', array_slice($d, 1-count($d), count($d)-1));
 	$domain = ign_getDomain();
 
@@ -1409,6 +1409,10 @@ if (txpinterface == 'public')
 // Thanks to Gerhard Lazu for this code.
 
   function ign_getDomain() {
+    //stealing the txp regex - much cleaner
+  //  return preg_replace('|//$|','/', rhu.'/');
+
+  
     $d = explode('.', $_SERVER['HTTP_HOST']);
     // $d_copy keeps code simple
     $d_copy = $d;
@@ -1419,6 +1423,7 @@ if (txpinterface == 'public')
     else {
       return join('.', array_slice($d, -2, 2));
     }
+    
   }
 
 // -------------------------------------------------------------
@@ -1721,6 +1726,39 @@ current;
 
 	 return $retVal;
  }
+
+  function ign_send_reset_confirmation_request($name)
+  { // 'borrowed' from txplib_admin
+    global $sitename, $ign_user_db;
+
+    $rs = safe_row('email, nonce', $ign_user_db, "name = '".doSlash($name)."'");
+
+    if ($rs)
+    {
+      extract($rs);
+
+      $confirm = bin2hex(pack('H*', substr(md5($nonce), 0, 10)).$name);
+
+      $message = gTxt('greeting').' '.$name.','.
+
+        n.n.gTxt('password_reset_confirmation').': '.
+        n.hu.$_SERVER['REQUEST_URI'].'?ign_confirm='.$confirm;
+
+      if (txpMail($email, "[$sitename] ".gTxt('password_reset_confirmation_request'), $message))
+      {
+        return gTxt('password_reset_confirmation_request_sent');
+      }
+      else
+      {
+        return gTxt('could_not_mail');
+      }
+    }
+
+    else
+    {
+      return gTxt('unknown_author', array('{name}' => htmlspecialchars($name)));
+    }
+  }
 
 
 //deprecated tags
