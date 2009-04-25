@@ -483,7 +483,11 @@ if (txpinterface == 'public')
 	 }
 
    //test for public login if txp_user_db
+<<<<<<< HEAD:ign_password_protect.php
    if($ign_user_db == 'txp_users' && isset($_COOKIE['txp_login_public'])) {
+=======
+   if($ign_user_db == 'txp_users' && isset($_COOKIE['txp_login_publics'])) {
+>>>>>>> 84915b844f71c6968dc0ecb1f8f379d85a9766e4:ign_password_protect.php
     $name = substr(cs('txp_login_public'), 10);
     $u = is_logged_in($name);
     // hackish - if this is a valid user, we need to populate the cookie
