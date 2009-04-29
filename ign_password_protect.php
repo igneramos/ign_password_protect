@@ -511,7 +511,6 @@ if (txpinterface == 'public')
 		 $nonce = $acct['nonce'];
 
      if ($nonce === md5($c_userid.pack('H*', $cookie_hash))) {
-//		 if (md5($c_userid.$c_privs.$nonce) == $cookie_hash) {	 // check nonce
 			 $GLOBALS['ign_user'] = $c_userid; // cookie is good, create $txp_user
 			 if($c_privs != $acct['privs']) //if privs have changed since cookie was created
 			 {
@@ -527,8 +526,29 @@ if (txpinterface == 'public')
 		 } else {
 			 // something's gone wrong
 			 $GLOBALS['ign_user'] = '';
-			 setcookie('ign_login','',-1, '/');
-			 return 3;
+		   setcookie('ign_login',' ',time()-3600,'/', $domain);
+
+       if($p_userid) {
+        //hackish - test userids in case we had a stale cookie 
+        sleep(3); // should grind dictionary attacks to a halt
+
+			 $valid_usr = ign_validate($p_userid,$p_password);
+
+			 if ($valid_usr) {
+			//	 $nonce = $valid_usr['nonce'];	 //get nonce
+
+				 if ($stay) { // persistent cookie required
+					 if(!ign_setCookie($valid_usr, $now)) return 3;
+					 setcookie('ign_stay', '1', $now, '/', $domain);
+				 } else {			 // session-only cookie required`
+					 if(!ign_setCookie($valid_usr)) return 3;
+					 setcookie('ign_stay','0',-1, '/', $domain);
+				 }
+				 $GLOBALS['ign_user'] = $p_userid; // login is good, create $txp_user
+				 return 0;
+       }
+       }
+       return 3;
 		 }
 
 	 } elseif ($p_userid) { // no cookie, but incoming login vars
@@ -648,7 +668,7 @@ if (txpinterface == 'public')
 		 $safe_user = strtr(addslashes($ign_user),array('_' => '\_', '%' => '\%'));
 		 safe_update($ign_user_db, "last_access = now()", "name = '$safe_user'");
 		 $ign_pp_updated = true;
-	 } else { echo 'no can update'; }
+	 } 
  }
 
 // -------------------------------------------------------------
@@ -1370,6 +1390,8 @@ if (txpinterface == 'public')
 // -------------------------------------------------------------
  function ign_setCookie($acct, $time=false, $path='/')
  {
+   global $ign_user_db;
+
 	 extract(lAtts(array(
 		 'name' => '',
 		 'realname' => '',
@@ -1401,6 +1423,28 @@ if (txpinterface == 'public')
 	 setcookie('ign_login', $val, $time, $path, $domain);
 	 $_COOKIE['ign_login'] = $val; //manually set value so cookie is available immediately
 
+   if($ign_user_db == 'txp_users') {
+   //TODO: revisit what's stored in the cookie and whether an additional query is warranted...
+    $pub_path   = preg_replace('|//$|','/', rhu.'/') . 'textpattern/';
+ 
+        $c_hash = md5(uniqid(mt_rand(), TRUE));
+        $nonce  = md5($name.pack('H*',$c_hash));
+
+        safe_update(
+          'txp_users',
+          "nonce = '".doSlash($nonce)."'",
+          "name = '".doSlash($name)."'"
+        );
+
+        setcookie(
+          'txp_login',
+          $name.','.$c_hash,
+          0,
+          $pub_path
+        );
+  
+
+   }
 	 return true;
  }
 
