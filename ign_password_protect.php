@@ -11,7 +11,7 @@
 $plugin['allow_html_help'] = 1;
 
 $plugin['name'] = 'ign_password_protect';
-$plugin['version'] = '0.5b11';
+$plugin['version'] = '0.5b11c';
 $plugin['author'] = 'Jeremy Amos';
 $plugin['author_uri'] = 'http://www.igneramos.com';
 $plugin['description'] = 'Password protect articles or sections; authenticates against txp_users or alternate database (ign_users) ';
@@ -479,6 +479,13 @@ if (txpinterface == 'public')
 		 {
 			 ddh_vanilla_logout();
 		 }
+     //clear admin side cookies too, if using the txp database
+     if($ign_user_db == 'txp_users') {
+      $pub_path   = preg_replace('|//$|','/', rhu.'/');
+      
+      setcookie('txp_login', '', time()-3600, $pub_path.'textpattern/');
+      setcookie('txp_login_public', '', time()-3600, $pub_path);
+     }
 		 return 1;
 	 }
 
@@ -491,12 +498,13 @@ if (txpinterface == 'public')
 		  $acct = safe_row('name, privs, realname, nonce, last_access, email', $ign_user_db, "name='{$u['name']}'");
 
       if(cs('ign_stay')) {
+		 	 //if(!ign_setCookie($acct, $now, $stay)) return 3;
 		 	 if(!ign_setCookie($acct, $now)) return 3;
 	    } else {
-			 if(!ign_setCookie($acct)) return 3;
+			 if(!ign_setCookie($acct, NULL)) return 3;
       }
       $GLOBALS['ign_user'] = $u['name'];
-			 ign_update_access($acct);
+			ign_update_access($acct);
      return 0;
     }
    }
@@ -535,9 +543,9 @@ if (txpinterface == 'public')
 			 $valid_usr = ign_validate($p_userid,$p_password);
 
 			 if ($valid_usr) {
-			//	 $nonce = $valid_usr['nonce'];	 //get nonce
 
 				 if ($stay) { // persistent cookie required
+//					 if(!ign_setCookie($valid_usr, $now, $stay)) return 3;
 					 if(!ign_setCookie($valid_usr, $now)) return 3;
 					 setcookie('ign_stay', '1', $now, '/', $domain);
 				 } else {			 // session-only cookie required`
@@ -561,6 +569,7 @@ if (txpinterface == 'public')
 				 $nonce = $valid_usr['nonce'];	 //get nonce
 
 				 if ($stay) { // persistent cookie required
+					 //if(!ign_setCookie($valid_usr, $now, $stay)) return 3;
 					 if(!ign_setCookie($valid_usr, $now)) return 3;
 					 setcookie('ign_stay', '1', $now, '/', $domain);
 				 } else {			 // session-only cookie required`
@@ -655,7 +664,7 @@ if (txpinterface == 'public')
  }
 
 // -------------------------------------------------------------
- function ign_update_access($acct)
+ function ign_update_access($acct, $nonce=null)
  {
 	 global $ign_pp_updated, $ign_user, $ign_user_db;
 
@@ -1388,7 +1397,7 @@ if (txpinterface == 'public')
  }
 
 // -------------------------------------------------------------
- function ign_setCookie($acct, $time=false, $path='/')
+ function ign_setCookie($acct, $time=false, $path='/', $hash='')
  {
    global $ign_user_db;
 
@@ -1407,27 +1416,26 @@ if (txpinterface == 'public')
 		 return false;
 	 }
 
+   $c_hash = (!empty($hash)) ? $hash : md5(uniqid(mt_rand(), TRUE));
 	 $o[] = urlencode($name);
 	 $o[] = urlencode($privs);
 	 $o[] = urlencode($realname);
-	 $o[] = urlencode(md5($name.$privs.$nonce));
+	 $o[] = urlencode($c_hash); // fixme!!!
 	 $o[] = urlencode($last_access);
 	 $o[] = urlencode($email);
 
 	 $val = join(',', $o);
-
-	// $d = explode('.', $_SERVER['HTTP_HOST']);
-	 // $domain = '.'.join('.', array_slice($d, 1-count($d), count($d)-1));
-	$domain = ign_getDomain();
+   $path = preg_replace('|//$|','/', rhu.'/');
+	 $domain = ign_getDomain();
 
 	 setcookie('ign_login', $val, $time, $path, $domain);
+	 setcookie('ign_login', $val, $time, $path);
 	 $_COOKIE['ign_login'] = $val; //manually set value so cookie is available immediately
 
    if($ign_user_db == 'txp_users') {
    //TODO: revisit what's stored in the cookie and whether an additional query is warranted...
     $pub_path   = preg_replace('|//$|','/', rhu.'/') . 'textpattern/';
  
-        $c_hash = md5(uniqid(mt_rand(), TRUE));
         $nonce  = md5($name.pack('H*',$c_hash));
 
         safe_update(
@@ -1439,12 +1447,12 @@ if (txpinterface == 'public')
         setcookie(
           'txp_login',
           $name.','.$c_hash,
-          0,
+          (!empty($time) ? time()+3600*24*365 : 0),
           $pub_path
         );
-  
 
    }
+
 	 return true;
  }
 
@@ -1456,7 +1464,7 @@ if (txpinterface == 'public')
     //stealing the txp regex - much cleaner
   //  return preg_replace('|//$|','/', rhu.'/');
 
-  
+ return $_SERVER['HTTP_HOST']; 
     $d = explode('.', $_SERVER['HTTP_HOST']);
     // $d_copy keeps code simple
     $d_copy = $d;
