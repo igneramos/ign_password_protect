@@ -143,6 +143,9 @@ if (txpinterface == 'admin')
  register_callback('ign_manageUsers', 'ign_user_mgmt');
 
  register_callback('ign_file_tab','file','file_edit');
+ if($prefs['ign_user_db'] == 'txp_users') {
+   register_callback('ign_admin_logout','admin_side','head_end');
+ }
 }
 
 if (txpinterface == 'public')
@@ -472,7 +475,9 @@ if (txpinterface == 'public')
 
 	 if ($logout) {
      //TODO: Should logout also clear txp_login_public?
-		 setcookie('ign_login',' ',time()-3600,'/', $domain);
+     $path = preg_replace('|//$|','/', rhu.'/');
+		 setcookie('ign_login',' ',time()-3600,$path, $domain);
+
 		 $GLOBALS['ign_user'] = '';
 		 // logout from Vanilla
 		 if(load_plugin("ddh_vanilla_integration"))
@@ -1429,7 +1434,6 @@ if (txpinterface == 'public')
 	 $domain = ign_getDomain();
 
 	 setcookie('ign_login', $val, $time, $path, $domain);
-	 setcookie('ign_login', $val, $time, $path);
 	 $_COOKIE['ign_login'] = $val; //manually set value so cookie is available immediately
 
    if($ign_user_db == 'txp_users') {
@@ -1491,6 +1495,21 @@ if (txpinterface == 'public')
 
 	 return $arr;
  }
+
+// -------------------------------------------------------------
+  function ign_admin_logout() { //TODO: incorporate ALL logout functionality here
+    $path = rhu.'?logout=1';
+    $js = <<<END
+      <script type="text/javascript">
+      $(function(){
+        $('#moniker a').each(function(){
+          this.href='{$path}';
+        });
+      });
+      </script>
+END;
+    echo $js;
+  }
 
 // -------------------------------------------------------------
  function ign_add_paging()
