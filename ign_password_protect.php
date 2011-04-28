@@ -421,8 +421,6 @@ if (txpinterface == 'public')
 	 }
 
 	 if($ign_user && ign_checkPrivs($privs)) {
-		 $out[] = parse($thing);
-
 		 return parse($thing);
 	 } else { //invalid user or privs
 		 switch ($login_type) {
@@ -597,10 +595,15 @@ if (txpinterface == 'public')
 		 return -1;
 	 }
  }
+ 
 // -------------------------------------------------------------
 function ign_validate($user,$password)
 {
 	global $ign_user_db, $prefs;
+	
+	$log = true;
+
+	include_once txpath.'/lib/PasswordHash.php';
 	
 	$fallback = false;
 	$safe_user = doSlash($user);
@@ -645,46 +648,14 @@ function ign_validate($user,$password)
 			ddh_vanilla_login($safe_user, $password);
 		}
 	
-		$r = safe_row('last_access', $ign_user_db, "`name` LIKE '{$safe_user}'");
+		$r = safe_row('name, realname, privs, nonce, last_access, email', $ign_user_db, "`name` LIKE '{$safe_user}'");
 		if ($r)
 		{
 			ign_update_access($r);
+			return $r;
 		}
-		
-		// update the last access time
-//		safe_update("txp_users", "last_access = now()", "name = '$safe_user'");
 	}
-	 
-	 
-	 
-//	 $sql = "name = '$safe_user' and pass = password(lower('$safe_pass')) ";
-//
-//	 $r = safe_row("name, realname, privs, nonce, last_access, email", $ign_user_db, $sql);
-//	 if (!$r) // fallback to old_password()
-//	 {
-//		 $fallback = true;
-//		 $sql = "name = '$safe_user' and (pass = old_password(lower('$safe_pass')) or pass = old_password('$safe_pass')) ";
-//		 $r = safe_row("name, realname, privs, nonce, last_access, email", $ign_user_db, $sql);
-//		 if(!$r && $prefs['ign_use_custom'] == 1) // last-ditch fallback to txp_users if using custom db AND flag is set.
-//		 {
-//			 $sql = "name = '$safe_user' and ( pass = password(lower('$safe_pass')) or pass = old_password(lower('$safe_pass')) or pass = old_password('$safe_pass') )";
-//			 $r = safe_row("name, realname, privs, nonce, last_access, email", 'txp_users', $sql);
-//		 }
-//	 }
-//	 if ($r)
-//	 {
-//		 if ($fallback) //update pass to the new hash structure ?
-//		 {
-//			 safe_update($ign_user_db, "pass = password(lower('$password'))", "name='$user'");
-//		 }
-//		 // Create session & cookies for Vanilla forum
-//		 if(load_plugin("ddh_vanilla_integration")) {
-//			 ddh_vanilla_login($safe_user, $password);
-//		 }
-//
-//		 ign_update_access($r);
-//		 return $r;
-//	 }
+
 	 return false;
  }
 
