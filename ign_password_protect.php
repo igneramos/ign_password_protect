@@ -11,7 +11,7 @@
 $plugin['allow_html_help'] = 1;
 
 $plugin['name'] = 'ign_password_protect';
-$plugin['version'] = '0.5b11c';
+$plugin['version'] = '0.6';
 $plugin['author'] = 'Jeremy Amos';
 $plugin['author_uri'] = 'http://www.igneramos.com';
 $plugin['description'] = 'Password protect articles or sections; authenticates against txp_users or alternate database (ign_users) ';
@@ -598,41 +598,93 @@ if (txpinterface == 'public')
 	 }
  }
 // -------------------------------------------------------------
- function ign_validate($user,$password)
- {
-	 global $ign_user_db, $prefs;
+function ign_validate($user,$password)
+{
+	global $ign_user_db, $prefs;
+	
+	$fallback = false;
+	$safe_user = doSlash($user);
+	$safe_pass = doSlash($password);
+	
+	$hash = safe_field('pass', $ign_user_db, "name = '$safe_user'");
+	$phpass = new PasswordHash(PASSWORD_COMPLEXITY, PASSWORD_PORTABILITY);
 
-	 $fallback = false;
-	 $safe_user = addslashes($user);
-	 $safe_pass = doSlash($password);
-	 $sql = "name = '$safe_user' and pass = password(lower('$safe_pass')) ";
+	// check post-4.3-style passwords
+	if ($phpass->CheckPassword($password, $hash)) {
+		if ($log) {
+			$name = safe_field("name", $ign_user_db, "name = '$safe_user' and privs > 0");
+		} else {
+			$name = $user;
+		}
+	} else {
+		// no good password: check 4.3-style passwords
+		$passwords = array();
+		
+		$passwords[] = "password(lower('".doSlash($password)."'))";
+		$passwords[] = "password('".doSlash($password)."')";
+		
+		if (version_compare(mysql_get_server_info(), '4.1.0', '>='))
+		{
+			$passwords[] = "old_password(lower('".doSlash($password)."'))";
+			$passwords[] = "old_password('".doSlash($password)."')";
+		}
+	
+		$name = safe_field("name", $ign_user_db,
+			"name = '$safe_user' and (pass = ".join(' or pass = ', $passwords).") and privs > 0");
 
-	 $r = safe_row("name, realname, privs, nonce, last_access, email", $ign_user_db, $sql);
-	 if (!$r) // fallback to old_password()
-	 {
-		 $fallback = true;
-		 $sql = "name = '$safe_user' and (pass = old_password(lower('$safe_pass')) or pass = old_password('$safe_pass')) ";
-		 $r = safe_row("name, realname, privs, nonce, last_access, email", $ign_user_db, $sql);
-		 if(!$r && $prefs['ign_use_custom'] == 1) // last-ditch fallback to txp_users if using custom db AND flag is set.
-		 {
-			 $sql = "name = '$safe_user' and ( pass = password(lower('$safe_pass')) or pass = old_password(lower('$safe_pass')) or pass = old_password('$safe_pass') )";
-			 $r = safe_row("name, realname, privs, nonce, last_access, email", 'txp_users', $sql);
-		 }
-	 }
-	 if ($r)
-	 {
-		 if ($fallback) //update pass to the new hash structure ?
-		 {
-			 safe_update($ign_user_db, "pass = password(lower('$password'))", "name='$user'");
-		 }
-		 // Create session & cookies for Vanilla forum
-		 if(load_plugin("ddh_vanilla_integration")) {
-			 ddh_vanilla_login($safe_user, $password);
-		 }
-
-		 ign_update_access($r);
-		 return $r;
-	 }
+		// old password is good: migrate password to phpass
+		if ($name !== FALSE) {
+			safe_update($ign_user_db, "pass = '".doSlash($phpass->HashPassword($password))."'", "name = '$safe_user'");
+		}
+	}
+	
+	if ($name !== FALSE)
+	{
+		// Create session & cookies for Vanilla forum
+		if(load_plugin("ddh_vanilla_integration")) {
+			ddh_vanilla_login($safe_user, $password);
+		}
+	
+		$r = safe_row('last_access', $ign_user_db, "`name` LIKE '{$safe_user}'");
+		if ($r)
+		{
+			ign_update_access($r);
+		}
+		
+		// update the last access time
+//		safe_update("txp_users", "last_access = now()", "name = '$safe_user'");
+	}
+	 
+	 
+	 
+//	 $sql = "name = '$safe_user' and pass = password(lower('$safe_pass')) ";
+//
+//	 $r = safe_row("name, realname, privs, nonce, last_access, email", $ign_user_db, $sql);
+//	 if (!$r) // fallback to old_password()
+//	 {
+//		 $fallback = true;
+//		 $sql = "name = '$safe_user' and (pass = old_password(lower('$safe_pass')) or pass = old_password('$safe_pass')) ";
+//		 $r = safe_row("name, realname, privs, nonce, last_access, email", $ign_user_db, $sql);
+//		 if(!$r && $prefs['ign_use_custom'] == 1) // last-ditch fallback to txp_users if using custom db AND flag is set.
+//		 {
+//			 $sql = "name = '$safe_user' and ( pass = password(lower('$safe_pass')) or pass = old_password(lower('$safe_pass')) or pass = old_password('$safe_pass') )";
+//			 $r = safe_row("name, realname, privs, nonce, last_access, email", 'txp_users', $sql);
+//		 }
+//	 }
+//	 if ($r)
+//	 {
+//		 if ($fallback) //update pass to the new hash structure ?
+//		 {
+//			 safe_update($ign_user_db, "pass = password(lower('$password'))", "name='$user'");
+//		 }
+//		 // Create session & cookies for Vanilla forum
+//		 if(load_plugin("ddh_vanilla_integration")) {
+//			 ddh_vanilla_login($safe_user, $password);
+//		 }
+//
+//		 ign_update_access($r);
+//		 return $r;
+//	 }
 	 return false;
  }
 
