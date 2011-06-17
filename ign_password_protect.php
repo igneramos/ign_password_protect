@@ -11,7 +11,7 @@
 $plugin['allow_html_help'] = 1;
 
 $plugin['name'] = 'ign_password_protect';
-$plugin['version'] = '0.6';
+$plugin['version'] = '0.6.1';
 $plugin['author'] = 'Jeremy Amos';
 $plugin['author_uri'] = 'http://www.igneramos.com';
 $plugin['description'] = 'Password protect articles or sections; authenticates against txp_users or alternate database (ign_users) ';
@@ -144,7 +144,7 @@ if (txpinterface == 'admin')
 
  register_callback('ign_file_tab','file','file_edit');
  if($prefs['ign_user_db'] == 'txp_users') {
-   register_callback('ign_admin_logout','admin_side','head_end');
+	 register_callback('ign_admin_logout','admin_side','head_end');
  }
 }
 
@@ -460,7 +460,7 @@ if (txpinterface == 'public')
 		 $p_password = ps('p_password');
 	 }
 
-   $p_reset = ps('p_reset');
+	 $p_reset = ps('p_reset');
 	 $logout = gps('logout');
 	 $stay = ps('stay');
 	 $now = time()+3600*24*365;
@@ -472,8 +472,8 @@ if (txpinterface == 'public')
 	 $domain = ign_getDomain();
 
 	 if ($logout) {
-     //TODO: Should logout also clear txp_login_public?
-     $path = preg_replace('|//$|','/', rhu.'/');
+		 //TODO: Should logout also clear txp_login_public?
+		 $path = preg_replace('|//$|','/', rhu.'/');
 		 setcookie('ign_login',' ',time()-3600,$path, $domain);
 
 		 $GLOBALS['ign_user'] = '';
@@ -482,35 +482,35 @@ if (txpinterface == 'public')
 		 {
 			 ddh_vanilla_logout();
 		 }
-     //clear admin side cookies too, if using the txp database
-     if($ign_user_db == 'txp_users') {
-      $pub_path   = preg_replace('|//$|','/', rhu.'/');
-      
-      setcookie('txp_login', '', time()-3600, $pub_path.'textpattern/');
-      setcookie('txp_login_public', '', time()-3600, $pub_path);
-     }
+		 //clear admin side cookies too, if using the txp database
+		 if($ign_user_db == 'txp_users') {
+			$pub_path   = preg_replace('|//$|','/', rhu.'/');
+			
+			setcookie('txp_login', '', time()-3600, $pub_path.'textpattern/');
+			setcookie('txp_login_public', '', time()-3600, $pub_path);
+		 }
 		 return 1;
 	 }
 
-   //test for public login if txp_user_db
-   if($ign_user_db == 'txp_users' && isset($_COOKIE['txp_login_public'])) {
-    $name = substr(cs('txp_login_public'), 10);
-    $u = is_logged_in($name);
-    // hackish - if this is a valid user, we need to populate the cookie
-    if($u) {
-		  $acct = safe_row('name, privs, realname, nonce, last_access, email', $ign_user_db, "name='{$u['name']}'");
+	 //test for public login if txp_user_db
+	 if($ign_user_db == 'txp_users' && isset($_COOKIE['txp_login_public'])) {
+		$name = substr(cs('txp_login_public'), 10);
+		$u = is_logged_in($name);
+		// hackish - if this is a valid user, we need to populate the cookie
+		if($u) {
+			$acct = safe_row('name, privs, realname, nonce, last_access, email', $ign_user_db, "name='{$u['name']}'");
 
-      if(cs('ign_stay')) {
-		 	 //if(!ign_setCookie($acct, $now, $stay)) return 3;
-		 	 if(!ign_setCookie($acct, $now)) return 3;
-	    } else {
-			 if(!ign_setCookie($acct, NULL)) return 3;
-      }
-      $GLOBALS['ign_user'] = $u['name'];
+			if(cs('ign_stay')) {
+			 // don't override the txp_login 
+			 if(!ign_setCookie($acct, $now, true)) return 3;
+			} else {
+			 if(!ign_setCookie($acct, NULL, true)) return 3;
+			}
+			$GLOBALS['ign_user'] = $u['name'];
 			ign_update_access($acct);
-     return 0;
-    }
-   }
+		 return 0;
+		}
+	 }
 
 	 if (isset($_COOKIE['ign_login']) and !$logout) // cookie exists
 	 {
@@ -521,7 +521,7 @@ if (txpinterface == 'public')
 		 $acct = safe_row('name, privs, realname, nonce, last_access, email', $ign_user_db, "name='$c_userid'");
 		 $nonce = $acct['nonce'];
 
-     if ($nonce === md5($c_userid.pack('H*', $cookie_hash))) {
+		 if ($nonce === md5($c_userid.pack('H*', $cookie_hash))) {
 			 $GLOBALS['ign_user'] = $c_userid; // cookie is good, create $txp_user
 			 if($c_privs != $acct['privs']) //if privs have changed since cookie was created
 			 {
@@ -537,11 +537,11 @@ if (txpinterface == 'public')
 		 } else {
 			 // something's gone wrong
 			 $GLOBALS['ign_user'] = '';
-		   setcookie('ign_login',' ',time()-3600,'/', $domain);
+			 setcookie('ign_login',' ',time()-3600,'/', $domain);
 
-       if($p_userid) {
-        //hackish - test userids in case we had a stale cookie 
-        sleep(3); // should grind dictionary attacks to a halt
+			 if($p_userid) {
+				//hackish - test userids in case we had a stale cookie 
+				sleep(3); // should grind dictionary attacks to a halt
 
 			 $valid_usr = ign_validate($p_userid,$p_password);
 
@@ -557,9 +557,9 @@ if (txpinterface == 'public')
 				 }
 				 $GLOBALS['ign_user'] = $p_userid; // login is good, create $txp_user
 				 return 0;
-       }
-       }
-       return 3;
+			 }
+			 }
+			 return 3;
 		 }
 
 	 } elseif ($p_userid) { // no cookie, but incoming login vars
@@ -585,11 +585,11 @@ if (txpinterface == 'public')
 				 $GLOBALS['ign_user'] = '';
 				 return 2;
 			 }
-   } elseif ($p_reset) {
-     // reset code?
-     sleep(3);
-   } elseif (gps('ign_reset')) {
-    // reset
+	 } elseif ($p_reset) {
+		 // reset code?
+		 sleep(3);
+	 } elseif (gps('ign_reset')) {
+		// reset
 	 } else {
 		 $GLOBALS['ign_user'] = '';
 		 return -1;
@@ -1034,12 +1034,12 @@ function ign_validate($user,$password)
 	 $use_form = @fetch_form($form);
 	 if(empty($use_form) || $use_form == "<p>form <strong>$form</strong> does not exist</p>" )
 	 {
-	 		 $use_form = ign_default_form('login');
+			 $use_form = ign_default_form('login');
 	 }
 
 	 list($form_action) = explode('?', $_SERVER['REQUEST_URI']);
 
-	 			// $id = (!empty($id)) ? " id=\"$id\"" : NULL;
+				// $id = (!empty($id)) ? " id=\"$id\"" : NULL;
 	$qs = @$_SERVER['QUERY_STRING'];
 	$qs = preg_replace('/&?logout=1/', '', $qs);
 
@@ -1235,7 +1235,7 @@ function ign_validate($user,$password)
 
 	 //build search here
 	 //TODO: Implement search on user name / real name
-   
+	 
 	 $rs = safe_rows_start("*", $ign_user_db, "$criteria order by $sort_by $dir limit $offset, $limit");
 
 	 $out[] = hed(ign_gTxt('users'),3,' align="center"');
@@ -1425,9 +1425,9 @@ function ign_validate($user,$password)
  }
 
 // -------------------------------------------------------------
- function ign_setCookie($acct, $time=false, $path='/', $hash='')
+ function ign_setCookie($acct, $time=NULL, $admin_login=false)
  {
-   global $ign_user_db;
+	 global $ign_user_db;
 
 	 extract(lAtts(array(
 		 'name' => '',
@@ -1444,7 +1444,7 @@ function ign_validate($user,$password)
 		 return false;
 	 }
 
-   $c_hash = (!empty($hash)) ? $hash : md5(uniqid(mt_rand(), TRUE));
+	 $c_hash = (!empty($hash)) ? $hash : md5(uniqid(mt_rand(), TRUE));
 	 $o[] = urlencode($name);
 	 $o[] = urlencode($privs);
 	 $o[] = urlencode($realname);
@@ -1453,32 +1453,33 @@ function ign_validate($user,$password)
 	 $o[] = urlencode($email);
 
 	 $val = join(',', $o);
-   $path = preg_replace('|//$|','/', rhu.'/');
+	 $path = preg_replace('|//$|','/', rhu.'/');
 	 $domain = ign_getDomain();
 
 	 setcookie('ign_login', $val, $time, $path, $domain);
 	 $_COOKIE['ign_login'] = $val; //manually set value so cookie is available immediately
 
-   if($ign_user_db == 'txp_users') {
-   //TODO: revisit what's stored in the cookie and whether an additional query is warranted...
-    $pub_path   = preg_replace('|//$|','/', rhu.'/') . 'textpattern/';
+    // only set the txp_login cookie if not already logged in to the admin side.
+	 if($ign_user_db == 'txp_users' && !$admin_login) {
+	 //TODO: revisit what's stored in the cookie and whether an additional query is warranted...
+		$pub_path   = preg_replace('|//$|','/', rhu.'/') . 'textpattern/';
  
-        $nonce  = md5($name.pack('H*',$c_hash));
+		$nonce  = md5($name.pack('H*',$c_hash));
 
-        safe_update(
-          'txp_users',
-          "nonce = '".doSlash($nonce)."'",
-          "name = '".doSlash($name)."'"
-        );
+		safe_update(
+			'txp_users',
+			"nonce = '".doSlash($nonce)."'",
+			"name = '".doSlash($name)."'"
+		);
 
-        setcookie(
-          'txp_login',
-          $name.','.$c_hash,
-          (!empty($time) ? time()+3600*24*365 : 0),
-          $pub_path
-        );
+		setcookie(
+			'txp_login',
+			$name.','.$c_hash,
+			(!empty($time) ? time()+3600*24*365 : 0),
+			$pub_path
+		);
 
-   }
+	 }
 
 	 return true;
  }
@@ -1487,23 +1488,23 @@ function ign_validate($user,$password)
 // This is a slight alteration for .co.uk like domains...
 // Thanks to Gerhard Lazu for this code.
 
-  function ign_getDomain() {
-    //stealing the txp regex - much cleaner
-  //  return preg_replace('|//$|','/', rhu.'/');
+	function ign_getDomain() {
+		//stealing the txp regex - much cleaner
+	//  return preg_replace('|//$|','/', rhu.'/');
 
  return $_SERVER['HTTP_HOST']; 
-    $d = explode('.', $_SERVER['HTTP_HOST']);
-    // $d_copy keeps code simple
-    $d_copy = $d;
-    // Make sure the last 2 values look like TLDs (no more than 3 characters). Not bulletproof (.info? .mobi?), but simple.
-    if ( (count($d) > 2) && (strlen(array_pop($d_copy)) < 4) && (strlen(array_pop($d_copy)) < 4) ) {
-      return join('.', array_slice($d, -3, 3));
-    }
-    else {
-      return join('.', array_slice($d, -2, 2));
-    }
-    
-  }
+		$d = explode('.', $_SERVER['HTTP_HOST']);
+		// $d_copy keeps code simple
+		$d_copy = $d;
+		// Make sure the last 2 values look like TLDs (no more than 3 characters). Not bulletproof (.info? .mobi?), but simple.
+		if ( (count($d) > 2) && (strlen(array_pop($d_copy)) < 4) && (strlen(array_pop($d_copy)) < 4) ) {
+			return join('.', array_slice($d, -3, 3));
+		}
+		else {
+			return join('.', array_slice($d, -2, 2));
+		}
+		
+	}
 
 // -------------------------------------------------------------
  function ign_getCookie()
@@ -1520,19 +1521,19 @@ function ign_validate($user,$password)
  }
 
 // -------------------------------------------------------------
-  function ign_admin_logout() { //TODO: incorporate ALL logout functionality here
-    $path = rhu.'?logout=1';
-    $js = <<<END
-      <script type="text/javascript">
-      $(function(){
-        $('#moniker a').each(function(){
-          this.href='{$path}';
-        });
-      });
-      </script>
+	function ign_admin_logout() { //TODO: incorporate ALL logout functionality here
+		$path = rhu.'?logout=1';
+		$js = <<<END
+			<script type="text/javascript">
+			$(function(){
+				$('#moniker a').each(function(){
+					this.href='{$path}';
+				});
+			});
+			</script>
 END;
-    echo $js;
-  }
+		echo $js;
+	}
 
 // -------------------------------------------------------------
  function ign_add_paging()
@@ -1821,38 +1822,38 @@ current;
 	 return $retVal;
  }
 
-  function ign_send_reset_confirmation_request($name)
-  { // 'borrowed' from txplib_admin
-    global $sitename, $ign_user_db;
+	function ign_send_reset_confirmation_request($name)
+	{ // 'borrowed' from txplib_admin
+		global $sitename, $ign_user_db;
 
-    $rs = safe_row('email, nonce', $ign_user_db, "name = '".doSlash($name)."'");
+		$rs = safe_row('email, nonce', $ign_user_db, "name = '".doSlash($name)."'");
 
-    if ($rs)
-    {
-      extract($rs);
+		if ($rs)
+		{
+			extract($rs);
 
-      $confirm = bin2hex(pack('H*', substr(md5($nonce), 0, 10)).$name);
+			$confirm = bin2hex(pack('H*', substr(md5($nonce), 0, 10)).$name);
 
-      $message = gTxt('greeting').' '.$name.','.
+			$message = gTxt('greeting').' '.$name.','.
 
-        n.n.gTxt('password_reset_confirmation').': '.
-        n.hu.$_SERVER['REQUEST_URI'].'?ign_confirm='.$confirm;
+				n.n.gTxt('password_reset_confirmation').': '.
+				n.hu.$_SERVER['REQUEST_URI'].'?ign_confirm='.$confirm;
 
-      if (txpMail($email, "[$sitename] ".gTxt('password_reset_confirmation_request'), $message))
-      {
-        return gTxt('password_reset_confirmation_request_sent');
-      }
-      else
-      {
-        return gTxt('could_not_mail');
-      }
-    }
+			if (txpMail($email, "[$sitename] ".gTxt('password_reset_confirmation_request'), $message))
+			{
+				return gTxt('password_reset_confirmation_request_sent');
+			}
+			else
+			{
+				return gTxt('could_not_mail');
+			}
+		}
 
-    else
-    {
-      return gTxt('unknown_author', array('{name}' => htmlspecialchars($name)));
-    }
-  }
+		else
+		{
+			return gTxt('unknown_author', array('{name}' => htmlspecialchars($name)));
+		}
+	}
 
 
 //deprecated tags
