@@ -518,7 +518,7 @@ if (txpinterface == 'public')
 		 list($c_userid,$c_privs,$c_realname, $cookie_hash) = ign_getCookie();
 
 		 //get account info
-		 $acct = safe_row('name, privs, realname, nonce, last_access, email', $ign_user_db, "name='$c_userid'");
+		 $acct = safe_row('name, privs, realname, nonce, last_access, email', $ign_user_db, "name='" . doSlash($c_userid) . "'");
 		 $nonce = $acct['nonce'];
 
 		 if ($nonce === md5($c_userid.pack('H*', $cookie_hash))) {
@@ -548,7 +548,6 @@ if (txpinterface == 'public')
 			 if ($valid_usr) {
 
 				 if ($stay) { // persistent cookie required
-//					 if(!ign_setCookie($valid_usr, $now, $stay)) return 3;
 					 if(!ign_setCookie($valid_usr, $now)) return 3;
 					 setcookie('ign_stay', '1', $now, '/', $domain);
 				 } else {			 // session-only cookie required`
