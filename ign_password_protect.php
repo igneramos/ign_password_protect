@@ -1453,13 +1453,9 @@ function ign_validate($user,$password)
 
 	 $val = join(',', $o);
 	 $path = preg_replace('|//$|','/', rhu.'/');
-	 $domain = ign_getDomain();
+	 $domain = '.' . ign_getDomain();
    
-	 //setcookie('ign_login', $val, $time, $path, $domain);
-
-   // don't know why, but it seems root cookies can't be set if domain is passed?
-   //TODO: investigate further, as I believe this worked at one time
-	 setcookie('ign_login', $val, $time, $path); 
+	 setcookie('ign_login', $val, $time, $path, $domain);
 	 $_COOKIE['ign_login'] = $val; //manually set value so cookie is available immediately
 	 
    $nonce  = md5($name.pack('H*',$c_hash));
