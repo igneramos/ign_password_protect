@@ -1451,7 +1451,7 @@ function ign_validate($user,$password)
 	 $o[] = urlencode($last_access);
 	 $o[] = urlencode($email);
 
-	 $val = join(',', $o);
+	 $val = base64_encode(join(',', $o));
 	 $path = preg_replace('|//$|','/', rhu.'/');
 	 $domain = '.' . ign_getDomain();
    
@@ -1516,7 +1516,7 @@ function ign_validate($user,$password)
  function ign_getCookie()
  {
 
-	 $arr = explode(',', cs('ign_login'));
+	 $arr = explode(',', base64_decode(cs('ign_login')));
 	 $n = count($arr);
 	 for ($i = 0; $i < $n; $i++)
 	 {
