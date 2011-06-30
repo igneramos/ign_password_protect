@@ -11,7 +11,7 @@
 $plugin['allow_html_help'] = 1;
 
 $plugin['name'] = 'ign_password_protect';
-$plugin['version'] = '0.6.1';
+$plugin['version'] = '0.6.2';
 $plugin['author'] = 'Jeremy Amos';
 $plugin['author_uri'] = 'http://www.igneramos.com';
 $plugin['description'] = 'Password protect articles or sections; authenticates against txp_users or alternate database (ign_users) ';
@@ -698,8 +698,8 @@ function ign_validate($user,$password)
 	 if (!$ign_pp_updated) { //update last access if necessary
 		 if(!empty($_COOKIE['ign_login']))
 		 {
-			 list(,,,,$cookie_time) = ign_getCookie();
-			 if(strtotime($acct['last_access'])-strtotime($cookie_time) > 60) ign_setCookie($acct);
+			 list(,,,$hash,$cookie_time) = ign_getCookie();
+			 if(strtotime($acct['last_access'])-strtotime($cookie_time) > 60) ign_setCookie($acct,null,false,$hash); // pass hash to preserve nonce
 		 }
 		 $safe_user = strtr(addslashes($ign_user),array('_' => '\_', '%' => '\%'));
 		 safe_update($ign_user_db, "last_access = now()", "name = '$safe_user'");
@@ -1424,7 +1424,7 @@ function ign_validate($user,$password)
  }
 
 // -------------------------------------------------------------
- function ign_setCookie($acct, $time=NULL, $admin_login=false)
+ function ign_setCookie($acct, $time=NULL, $admin_login=false, $hash=null)
  {
 	 global $ign_user_db;
 
