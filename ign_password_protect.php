@@ -1454,16 +1454,21 @@ function ign_validate($user,$password)
 	 $val = join(',', $o);
 	 $path = preg_replace('|//$|','/', rhu.'/');
 	 $domain = ign_getDomain();
+   
+	 //setcookie('ign_login', $val, $time, $path, $domain);
 
-	 setcookie('ign_login', $val, $time, $path, $domain);
+   // don't know why, but it seems root cookies can't be set if domain is passed?
+   //TODO: investigate further, as I believe this worked at one time
+	 setcookie('ign_login', $val, $time, $path); 
 	 $_COOKIE['ign_login'] = $val; //manually set value so cookie is available immediately
+	 
+   $nonce  = md5($name.pack('H*',$c_hash));
 
     // only set the txp_login cookie if not already logged in to the admin side.
 	 if($ign_user_db == 'txp_users' && !$admin_login) {
 	 //TODO: revisit what's stored in the cookie and whether an additional query is warranted...
 		$pub_path   = preg_replace('|//$|','/', rhu.'/') . 'textpattern/';
  
-		$nonce  = md5($name.pack('H*',$c_hash));
 
 		safe_update(
 			'txp_users',
@@ -1475,10 +1480,16 @@ function ign_validate($user,$password)
 			'txp_login',
 			$name.','.$c_hash,
 			(!empty($time) ? time()+3600*24*365 : 0),
-			$pub_path
+			trim($pub_path, '/')
 		);
 
-	 }
+	 } elseif ($ign_user_db != 'txp_users') {
+      safe_update(
+        $ign_user_db,
+        "nonce = '".doSlash($nonce)."'",
+        "name = '".doSlash($name)."'"
+      );
+   }
 
 	 return true;
  }
