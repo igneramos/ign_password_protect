@@ -11,7 +11,7 @@
 $plugin['allow_html_help'] = 1;
 
 $plugin['name'] = 'ign_password_protect';
-$plugin['version'] = '0.6.2';
+$plugin['version'] = '0.6.3';
 $plugin['author'] = 'Jeremy Amos';
 $plugin['author_uri'] = 'http://www.igneramos.com';
 $plugin['description'] = 'Password protect articles or sections; authenticates against txp_users or alternate database (ign_users) ';
@@ -195,7 +195,7 @@ if (txpinterface == 'public')
 		 'form' => 'current_user'
 	 ), $atts, 0));
 
-	 if ( !$ign_err ) {
+	 if ( !$ign_err || $ign_err == 4 ) {
 		 $use_form = @fetch_form($form);
 		 if(empty($use_form))
 		 {
